@@ -3,83 +3,56 @@ package main
 import (
 	"context"
 	"expvar"
-	"flag"
 	"fmt"
 	"log"
-	"net"
-	"net/http"
 	"os"
 	"os/signal"
 
-	alog "github.com/apex/log"
-	"github.com/apex/log/handlers/text"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/kinesis"
-	consumer "github.com/harlow/kinesis-consumer"
-	storage "github.com/harlow/kinesis-consumer/store/ddb"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis"
+	consumer "github.com/mitooos/kinesis-consumer"
+	storage "github.com/mitooos/kinesis-consumer/store/ddb"
 )
-
-// kick off a server for exposing scan metrics
-func init() {
-	sock, err := net.Listen("tcp", "localhost:8080")
-	if err != nil {
-		log.Printf("net listen error: %v", err)
-	}
-	go func() {
-		fmt.Println("Metrics available at http://localhost:8080/debug/vars")
-		http.Serve(sock, nil)
-	}()
-}
 
 // A myLogger provides a minimalistic logger satisfying the Logger interface.
 type myLogger struct {
-	logger alog.Logger
+	logger *log.Logger
 }
 
 // Log logs the parameters to the stdlib logger. See log.Println.
 func (l *myLogger) Log(args ...interface{}) {
-	l.logger.Infof("producer: %v", args...)
+	l.logger.Println(args...)
 }
 
 func main() {
 	// Wrap myLogger around  apex logger
-	log := &myLogger{
-		logger: alog.Logger{
-			Handler: text.New(os.Stdout),
-			Level:   alog.DebugLevel,
-		},
+	logger := &myLogger{
+		logger: log.New(os.Stdout, "consumer-example: ", log.LstdFlags),
 	}
 
-	var (
-		app             = flag.String("app", "", "Consumer app name")
-		stream          = flag.String("stream", "", "Stream name")
-		table           = flag.String("table", "", "Checkpoint table name")
-		kinesisEndpoint = flag.String("endpoint", "http://localhost:4567", "Kinesis endpoint")
-		awsRegion       = flag.String("region", "us-west-2", "AWS Region")
-	)
-	flag.Parse()
+	stream := "test"
+	app := "test_app"
+	table := "kinesis-consumer-checkpoint"
 
 	// New Kinesis and DynamoDB clients (if you need custom config)
-	sess, err := session.NewSession(aws.NewConfig())
+	// client
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion("us-west-2"),
+	)
 	if err != nil {
-		log.Log("new session error: %v", err)
+		// handle error
+		log.Fatal(err)
 	}
-	myDdbClient := dynamodb.New(sess)
 
-	var myKsis = kinesis.New(session.Must(session.NewSession(
-		aws.NewConfig().
-			WithEndpoint(*kinesisEndpoint).
-			WithRegion(*awsRegion).
-			WithLogLevel(3),
-	)))
+	myDdbClient := dynamodb.NewFromConfig(cfg)
+
+	myKsis := kinesis.NewFromConfig(cfg)
 
 	// ddb persitance
-	ddb, err := storage.New(*app, *table, storage.WithDynamoClient(myDdbClient), storage.WithRetryer(&MyRetryer{}))
+	ddb, err := storage.New(app, table, storage.WithDynamoClient(myDdbClient))
 	if err != nil {
-		log.Log("checkpoint error: %v", err)
+		logger.Log("checkpoint error: %v", err)
 	}
 
 	// expvar counter
@@ -87,14 +60,15 @@ func main() {
 
 	// consumer
 	c, err := consumer.New(
-		*stream,
+		stream,
 		consumer.WithStore(ddb),
-		consumer.WithLogger(log),
+		consumer.WithLogger(logger),
 		consumer.WithCounter(counter),
 		consumer.WithClient(myKsis),
+		consumer.WithAggregation(true),
 	)
 	if err != nil {
-		log.Log("consumer error: %v", err)
+		logger.Log("consumer error: %v", err)
 	}
 
 	// use cancel func to signal shutdown
@@ -115,28 +89,10 @@ func main() {
 		return nil // continue scanning
 	})
 	if err != nil {
-		log.Log("scan error: %v", err)
+		logger.Log("scan error: %v", err)
 	}
 
 	if err := ddb.Shutdown(); err != nil {
-		log.Log("storage shutdown error: %v", err)
+		logger.Log("storage shutdown error: %v", err)
 	}
-}
-
-// MyRetryer used for storage
-type MyRetryer struct {
-	storage.Retryer
-}
-
-// ShouldRetry implements custom logic for when errors should retry
-func (r *MyRetryer) ShouldRetry(err error) bool {
-	if awsErr, ok := err.(awserr.Error); ok {
-		switch awsErr.Code() {
-		case dynamodb.ErrCodeProvisionedThroughputExceededException, dynamodb.ErrCodeLimitExceededException:
-			return true
-		default:
-			return false
-		}
-	}
-	return false
 }

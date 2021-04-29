@@ -5,8 +5,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/kinesis"
-	"github.com/aws/aws-sdk-go/service/kinesis/kinesisiface"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis/types"
+
+	"github.com/mitooos/kinesis-consumer/kinesisiface"
 )
 
 // NewAllGroup returns an intitialized AllGroup for consuming
@@ -14,7 +15,7 @@ import (
 func NewAllGroup(ksis kinesisiface.KinesisAPI, store Store, streamName string, logger Logger) *AllGroup {
 	return &AllGroup{
 		ksis:       ksis,
-		shards:     make(map[string]*kinesis.Shard),
+		shards:     make(map[string]types.Shard),
 		streamName: streamName,
 		logger:     logger,
 		Store:      store,
@@ -31,12 +32,12 @@ type AllGroup struct {
 	Store
 
 	shardMu sync.Mutex
-	shards  map[string]*kinesis.Shard
+	shards  map[string]types.Shard
 }
 
 // Start is a blocking operation which will loop and attempt to find new
 // shards on a regular cadence.
-func (g *AllGroup) Start(ctx context.Context, shardc chan *kinesis.Shard) {
+func (g *AllGroup) Start(ctx context.Context, shardc chan *types.Shard) {
 	var ticker = time.NewTicker(30 * time.Second)
 	g.findNewShards(shardc)
 
@@ -63,7 +64,7 @@ func (g *AllGroup) Start(ctx context.Context, shardc chan *kinesis.Shard) {
 // findNewShards pulls the list of shards from the Kinesis API
 // and uses a local cache to determine if we are already processing
 // a particular shard.
-func (g *AllGroup) findNewShards(shardc chan *kinesis.Shard) {
+func (g *AllGroup) findNewShards(shardc chan *types.Shard) {
 	g.shardMu.Lock()
 	defer g.shardMu.Unlock()
 
@@ -80,6 +81,6 @@ func (g *AllGroup) findNewShards(shardc chan *kinesis.Shard) {
 			continue
 		}
 		g.shards[*shard.ShardId] = shard
-		shardc <- shard
+		shardc <- &shard
 	}
 }

@@ -2,17 +2,15 @@ package main
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/kinesis"
-	consumer "github.com/harlow/kinesis-consumer"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis"
+	consumer "github.com/mitooos/kinesis-consumer"
 )
 
 // A myLogger provides a minimalistic logger satisfying the Logger interface.
@@ -26,24 +24,30 @@ func (l *myLogger) Log(args ...interface{}) {
 }
 
 func main() {
-	var (
-		stream          = flag.String("stream", "", "Stream name")
-		kinesisEndpoint = flag.String("endpoint", "http://localhost:4567", "Kinesis endpoint")
-		awsRegion       = flag.String("region", "us-west-2", "AWS Region")
-	)
-	flag.Parse()
+
+	stream := "test"
 
 	// client
-	var client = kinesis.New(session.Must(session.NewSession(
-		aws.NewConfig().
-			WithEndpoint(*kinesisEndpoint).
-			WithRegion(*awsRegion),
-	)))
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion("us-west-2"),
+	)
+	if err != nil {
+		// handle error
+		log.Fatal(err)
+	}
+
+	client := kinesis.NewFromConfig(cfg)
+
+	logger := &myLogger{
+		logger: log.New(os.Stdout, "consumer-example: ", log.LstdFlags),
+	}
 
 	// consumer
 	c, err := consumer.New(
-		*stream,
+		stream,
 		consumer.WithClient(client),
+		consumer.WithLogger(logger),
+		consumer.WithAggregation(true),
 	)
 	if err != nil {
 		log.Fatalf("consumer error: %v", err)

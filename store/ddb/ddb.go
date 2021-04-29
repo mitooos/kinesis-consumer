@@ -1,16 +1,19 @@
 package ddb
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sync"
 	"time"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
-	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbiface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
+
+	"github.com/mitooos/kinesis-consumer/store/ddb/dynamodbiface"
 )
 
 // Option is used to override defaults when creating a new Checkpoint
@@ -56,11 +59,15 @@ func New(appName, tableName string, opts ...Option) (*Checkpoint, error) {
 
 	// default client
 	if ck.client == nil {
-		newSession, err := session.NewSession(aws.NewConfig())
+		// client
+		cfg, err := config.LoadDefaultConfig(context.TODO(),
+			config.WithRegion("us-west-2"),
+		)
 		if err != nil {
-			return nil, err
+			// handle error
+			log.Fatal(err)
 		}
-		ck.client = dynamodb.New(newSession)
+		ck.client = dynamodb.NewFromConfig(cfg)
 	}
 
 	go ck.loop()
@@ -86,9 +93,9 @@ type key struct {
 }
 
 type item struct {
-	Namespace      string `json:"namespace"`
-	ShardID        string `json:"shard_id"`
-	SequenceNumber string `json:"sequence_number"`
+	Namespace      string `dynamodbav:"namespace"`
+	ShardID        string `dynamodbav:"shard_id"`
+	SequenceNumber string `dynamodbav:"sequence_number"`
 }
 
 // GetCheckpoint determines if a checkpoint for a particular Shard exists.
@@ -100,17 +107,19 @@ func (c *Checkpoint) GetCheckpoint(streamName, shardID string) (string, error) {
 	params := &dynamodb.GetItemInput{
 		TableName:      aws.String(c.tableName),
 		ConsistentRead: aws.Bool(true),
-		Key: map[string]*dynamodb.AttributeValue{
-			"namespace": &dynamodb.AttributeValue{
-				S: aws.String(namespace),
+		Key: map[string]types.AttributeValue{
+			"namespace": &types.AttributeValueMemberS{
+				Value: namespace,
 			},
-			"shard_id": &dynamodb.AttributeValue{
-				S: aws.String(shardID),
+			"shard_id": &types.AttributeValueMemberS{
+				Value: shardID,
 			},
 		},
 	}
 
-	resp, err := c.client.GetItem(params)
+	ctx := context.Background()
+
+	resp, err := c.client.GetItem(ctx, params)
 	if err != nil {
 		if c.retryer.ShouldRetry(err) {
 			return c.GetCheckpoint(streamName, shardID)
@@ -119,7 +128,7 @@ func (c *Checkpoint) GetCheckpoint(streamName, shardID string) (string, error) {
 	}
 
 	var i item
-	dynamodbattribute.UnmarshalMap(resp.Item, &i)
+	attributevalue.UnmarshalMap(resp.Item, &i)
 	return i.SequenceNumber, nil
 }
 
@@ -168,7 +177,7 @@ func (c *Checkpoint) save() error {
 	defer c.mu.Unlock()
 
 	for key, sequenceNumber := range c.checkpoints {
-		item, err := dynamodbattribute.MarshalMap(item{
+		itemToInsert, err := attributevalue.MarshalMap(item{
 			Namespace:      fmt.Sprintf("%s-%s", c.appName, key.streamName),
 			ShardID:        key.shardID,
 			SequenceNumber: sequenceNumber,
@@ -178,9 +187,11 @@ func (c *Checkpoint) save() error {
 			return nil
 		}
 
-		_, err = c.client.PutItem(&dynamodb.PutItemInput{
+		ctx := context.Background()
+
+		_, err = c.client.PutItem(ctx, &dynamodb.PutItemInput{
 			TableName: aws.String(c.tableName),
-			Item:      item,
+			Item:      itemToInsert,
 		})
 		if err != nil {
 			if !c.retryer.ShouldRetry(err) {

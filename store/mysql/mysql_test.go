@@ -2,12 +2,12 @@ package mysql
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
-	"github.com/pkg/errors"
 )
 
 func TestNew(t *testing.T) {
