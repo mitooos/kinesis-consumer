@@ -25,7 +25,7 @@ func (l *myLogger) Log(args ...interface{}) {
 
 func main() {
 
-	stream := "facturas_items"
+	stream := "test"
 
 	// client
 	cfg, err := config.LoadDefaultConfig(context.TODO(),

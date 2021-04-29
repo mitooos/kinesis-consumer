@@ -32,7 +32,7 @@ func main() {
 	}
 
 
-	stream := "facturas_items"
+	stream := "test"
 	app := "test_app"
 	table := "kinesis-consumer-checkpoint"
 
