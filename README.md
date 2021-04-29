@@ -1,25 +1,24 @@
 # Golang Kinesis Consumer
 
+**Note:** This repo is under active development adding [Consumer Groups #42](https://github.com/mitooos/kinesis-consumer/issues/42). Master should always be deployable, but there may be interface changes in master over the next few months.
 
-__Note:__ This repo is under active development adding [Consumer Groups #42](https://github.com/harlow/kinesis-consumer/issues/42). Master should always be deployable, but there may be interface changes in master over the next few months.
+Latest stable release https://github.com/mitooos/kinesis-consumer/releases/tag/v0.3.2
 
-Latest stable release https://github.com/harlow/kinesis-consumer/releases/tag/v0.3.2
-
-![technology Go](https://img.shields.io/badge/technology-go-blue.svg) [![Build Status](https://travis-ci.com/harlow/kinesis-consumer.svg?branch=master)](https://travis-ci.com/harlow/kinesis-consumer) [![GoDoc](https://godoc.org/github.com/harlow/kinesis-consumer?status.svg)](https://godoc.org/github.com/harlow/kinesis-consumer) [![GoReportCard](https://goreportcard.com/badge/github.com/harlow/kinesis-consumer)](https://goreportcard.com/report/harlow/kinesis-consumer)
+![technology Go](https://img.shields.io/badge/technology-go-blue.svg) [![Build Status](https://travis-ci.com/harlow/kinesis-consumer.svg?branch=master)](https://travis-ci.com/harlow/kinesis-consumer) [![GoDoc](https://godoc.org/github.com/mitooos/kinesis-consumer?status.svg)](https://godoc.org/github.com/mitooos/kinesis-consumer) [![GoReportCard](https://goreportcard.com/badge/github.com/mitooos/kinesis-consumer)](https://goreportcard.com/report/harlow/kinesis-consumer)
 
 Kinesis consumer applications written in Go. This library is intended to be a lightweight wrapper around the Kinesis API to read records, save checkpoints (with swappable backends), and gracefully recover from service timeouts/errors.
 
-__Alternate serverless options:__
+**Alternate serverless options:**
 
-* [Kinesis to Firehose](http://docs.aws.amazon.com/firehose/latest/dev/writing-with-kinesis-streams.html) can be used to archive data directly to S3, Redshift, or Elasticsearch without running a consumer application.
+- [Kinesis to Firehose](http://docs.aws.amazon.com/firehose/latest/dev/writing-with-kinesis-streams.html) can be used to archive data directly to S3, Redshift, or Elasticsearch without running a consumer application.
 
-* [Process Kinesis Streams with Golang and AWS Lambda](https://medium.com/@harlow/processing-kinesis-streams-w-aws-lambda-and-golang-264efc8f979a) for serverless processing and checkpoint management.
+- [Process Kinesis Streams with Golang and AWS Lambda](https://medium.com/@harlow/processing-kinesis-streams-w-aws-lambda-and-golang-264efc8f979a) for serverless processing and checkpoint management.
 
 ## Installation
 
 Get the package source:
 
-    $ go get github.com/harlow/kinesis-consumer
+    $ go get github.com/mitooos/kinesis-consumer
 
 ## Overview
 
@@ -33,7 +32,7 @@ _Important 2: The default Log, Counter, and Checkpoint are no-op which means no 
 import(
 	// ...
 
-	consumer "github.com/harlow/kinesis-consumer"
+	consumer "github.com/mitooos/kinesis-consumer"
 )
 
 func main() {
@@ -137,7 +136,7 @@ To persist scan progress choose one of the following storage layers:
 The Redis checkpoint requries App Name, and Stream Name:
 
 ```go
-import store "github.com/harlow/kinesis-consumer/store/redis"
+import store "github.com/mitooos/kinesis-consumer/store/redis"
 
 // redis checkpoint
 db, err := store.New(appName)
@@ -151,7 +150,7 @@ if err != nil {
 The DynamoDB checkpoint requires Table Name, App Name, and Stream Name:
 
 ```go
-import store "github.com/harlow/kinesis-consumer/store/ddb"
+import store "github.com/mitooos/kinesis-consumer/store/ddb"
 
 // ddb checkpoint
 db, err := store.New(appName, tableName)
@@ -192,7 +191,7 @@ Sort key: shard_id
 The Postgres checkpoint requires Table Name, App Name, Stream Name and ConnectionString:
 
 ```go
-import store "github.com/harlow/kinesis-consumer/store/postgres"
+import store "github.com/mitooos/kinesis-consumer/store/postgres"
 
 // postgres checkpoint
 db, err := store.New(app, table, connStr)
@@ -220,7 +219,7 @@ The table name has to be the same that you specify when creating the checkpoint.
 The Mysql checkpoint requires Table Name, App Name, Stream Name and ConnectionString (just like the Postgres checkpoint!):
 
 ```go
-import store "github.com/harlow/kinesis-consumer/store/mysql"
+import store "github.com/mitooos/kinesis-consumer/store/mysql"
 
 // mysql checkpoint
 db, err := store.New(app, table, connStr)
@@ -286,7 +285,7 @@ This can be adjusted by using the `WithShardIteratorType` option in the library:
 // override starting place on stream to use TRIM_HORIZON
 c, err := consumer.New(
   *stream,
-  consumer.WithShardIteratorType(kinesis.ShardIteratorTypeTrimHorizon)
+  consumer.WithShardIteratorType(types.ShardIteratorTypeTrimHorizon)
 )
 ```
 
@@ -349,22 +348,22 @@ There are example Produder and Consumer code in `/cmd` directory. These should h
 
 The examples run locally against [Kinesis Lite](https://github.com/mhart/kinesalite).
 
-	$ kinesalite &
+    $ kinesalite &
 
 Produce data to the stream:
 
-	$ cat cmd/producer/users.txt  | go run cmd/producer/main.go --stream myStream
+    $ cat cmd/producer/users.txt  | go run cmd/producer/main.go --stream myStream
 
 Consume data from the stream:
 
-	$ go run cmd/consumer/main.go --stream myStream
+    $ go run cmd/consumer/main.go --stream myStream
 
 ## Contributing
 
 Please see [CONTRIBUTING.md] for more information. Thank you, [contributors]!
 
-[LICENSE]: /MIT-LICENSE
-[CONTRIBUTING.md]: /CONTRIBUTING.md
+[license]: /MIT-LICENSE
+[contributing.md]: /CONTRIBUTING.md
 
 ## License
 

@@ -9,11 +9,11 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/kinesis"
-	consumer "github.com/harlow/kinesis-consumer"
-	store "github.com/harlow/kinesis-consumer/store/mysql"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/session"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis"
+	consumer "github.com/mitooos/kinesis-consumer"
+	store "github.com/mitooos/kinesis-consumer/store/mysql"
 )
 
 func main() {

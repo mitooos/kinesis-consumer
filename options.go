@@ -3,7 +3,7 @@ package consumer
 import (
 	"time"
 
-	"github.com/aws/aws-sdk-go/service/kinesis/kinesisiface"
+	"github.com/mitooos/kinesis-consumer/kinesisiface"
 )
 
 // Option is used to override defaults when creating a new Consumer

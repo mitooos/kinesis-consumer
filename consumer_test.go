@@ -6,13 +6,13 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/request"
-	"github.com/aws/aws-sdk-go/service/kinesis"
-	"github.com/aws/aws-sdk-go/service/kinesis/kinesisiface"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/awserr"
+	"github.com/aws/aws-sdk-go-v2/aws/request"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis/kinesisiface"
 
-	"github.com/harlow/kinesis-consumer/store/memory"
+	"github.com/mitooos/kinesis-consumer/store/memory"
 )
 
 var records = []*kinesis.Record{
@@ -47,7 +47,7 @@ func TestScan(t *testing.T) {
 		},
 		listShardsMock: func(input *kinesis.ListShardsInput) (*kinesis.ListShardsOutput, error) {
 			return &kinesis.ListShardsOutput{
-				Shards: []*kinesis.Shard{
+				Shards: []*types.Shard{
 					{ShardId: aws.String("myShard")},
 				},
 			}, nil

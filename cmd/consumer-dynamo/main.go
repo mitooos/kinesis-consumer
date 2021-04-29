@@ -13,13 +13,13 @@ import (
 
 	alog "github.com/apex/log"
 	"github.com/apex/log/handlers/text"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/awserr"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/dynamodb"
-	"github.com/aws/aws-sdk-go/service/kinesis"
-	consumer "github.com/harlow/kinesis-consumer"
-	storage "github.com/harlow/kinesis-consumer/store/ddb"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/aws/awserr"
+	"github.com/aws/aws-sdk-go-v2/aws/session"
+	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis"
+	consumer "github.com/mitooos/kinesis-consumer"
+	storage "github.com/mitooos/kinesis-consumer/store/ddb"
 )
 
 // kick off a server for exposing scan metrics
