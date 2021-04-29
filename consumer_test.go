@@ -2,20 +2,18 @@ package consumer
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"testing"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/awserr"
-	"github.com/aws/aws-sdk-go-v2/aws/request"
 	"github.com/aws/aws-sdk-go-v2/service/kinesis"
-	"github.com/aws/aws-sdk-go-v2/service/kinesis/kinesisiface"
+	"github.com/aws/aws-sdk-go-v2/service/kinesis/types"
+	"github.com/mitooos/kinesis-consumer/kinesisiface"
 
 	"github.com/mitooos/kinesis-consumer/store/memory"
 )
 
-var records = []*kinesis.Record{
+var records = []types.Record{
 	{
 		Data:           []byte("firstData"),
 		SequenceNumber: aws.String("firstSeqNum"),
@@ -47,7 +45,7 @@ func TestScan(t *testing.T) {
 		},
 		listShardsMock: func(input *kinesis.ListShardsInput) (*kinesis.ListShardsOutput, error) {
 			return &kinesis.ListShardsOutput{
-				Shards: []*types.Shard{
+				Shards: []types.Shard{
 					{ShardId: aws.String("myShard")},
 				},
 			}, nil
@@ -231,7 +229,7 @@ func TestScanShard_SkipCheckpoint(t *testing.T) {
 	var ctx, cancel = context.WithCancel(context.Background())
 
 	var fn = func(r *Record) error {
-		if aws.StringValue(r.SequenceNumber) == "lastSeqNum" {
+		if aws.ToString(r.SequenceNumber) == "lastSeqNum" {
 			cancel()
 			return ErrSkipCheckpoint
 		}
@@ -260,7 +258,7 @@ func TestScanShard_ShardIsClosed(t *testing.T) {
 		getRecordsMock: func(input *kinesis.GetRecordsInput) (*kinesis.GetRecordsOutput, error) {
 			return &kinesis.GetRecordsOutput{
 				NextShardIterator: nil,
-				Records:           make([]*kinesis.Record, 0),
+				Records:           make([]types.Record, 0),
 			}, nil
 		},
 	}
@@ -291,11 +289,7 @@ func TestScanShard_GetRecordsError(t *testing.T) {
 			return &kinesis.GetRecordsOutput{
 					NextShardIterator: nil,
 					Records:           nil,
-				}, awserr.New(
-					kinesis.ErrCodeInvalidArgumentException,
-					"aws error message",
-					fmt.Errorf("error message"),
-				)
+				}, &types.InvalidArgumentException{}
 		},
 	}
 
@@ -309,8 +303,8 @@ func TestScanShard_GetRecordsError(t *testing.T) {
 	}
 
 	err = c.ScanShard(context.Background(), "myShard", fn)
-	if err.Error() != "get records error: aws error message" {
-		t.Fatalf("unexpected error: %v", err)
+	if err.Error() != "get records error: InvalidArgumentException: " {
+		t.Fatalf("want: %q, got : %q", "get records error: InvalidArgumentException: ", err.Error())
 	}
 }
 
@@ -321,19 +315,19 @@ type kinesisClientMock struct {
 	listShardsMock       func(*kinesis.ListShardsInput) (*kinesis.ListShardsOutput, error)
 }
 
-func (c *kinesisClientMock) ListShards(in *kinesis.ListShardsInput) (*kinesis.ListShardsOutput, error) {
+func (c *kinesisClientMock) ListShards(ctx context.Context, in *kinesis.ListShardsInput, opts ...func(*kinesis.Options)) (*kinesis.ListShardsOutput, error) {
 	return c.listShardsMock(in)
 }
 
-func (c *kinesisClientMock) GetRecords(in *kinesis.GetRecordsInput) (*kinesis.GetRecordsOutput, error) {
+func (c *kinesisClientMock) GetRecords(ctx context.Context, in *kinesis.GetRecordsInput, opts ...func(*kinesis.Options)) (*kinesis.GetRecordsOutput, error) {
 	return c.getRecordsMock(in)
 }
 
-func (c *kinesisClientMock) GetShardIterator(in *kinesis.GetShardIteratorInput) (*kinesis.GetShardIteratorOutput, error) {
+func (c *kinesisClientMock) GetShardIterator(ctx context.Context, in *kinesis.GetShardIteratorInput, opts ...func(*kinesis.Options)) (*kinesis.GetShardIteratorOutput, error) {
 	return c.getShardIteratorMock(in)
 }
 
-func (c *kinesisClientMock) GetShardIteratorWithContext(ctx aws.Context, in *kinesis.GetShardIteratorInput, options ...request.Option) (*kinesis.GetShardIteratorOutput, error) {
+func (c *kinesisClientMock) GetShardIteratorWithContext(ctx context.Context, in *kinesis.GetShardIteratorInput, opts ...func(*kinesis.Options)) (*kinesis.GetShardIteratorOutput, error) {
 	return c.getShardIteratorMock(in)
 }
 

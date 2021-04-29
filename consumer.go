@@ -193,6 +193,7 @@ func (c *Consumer) ScanShard(ctx context.Context, shardID string, fn ScanFunc) e
 			} else {
 				records = resp.Records
 			}
+
 			for _, r := range records {
 				select {
 				case <-ctx.Done():
@@ -239,7 +240,7 @@ func isErrorrRetriable(err error) bool {
 	}
 
 	for _, retriableErr := range retriableErrors {
-		if errors.As(err, retriableErr) {
+		if err.Error() == retriableErr.Error() {
 			return true
 		}
 	}
