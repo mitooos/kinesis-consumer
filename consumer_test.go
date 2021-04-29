@@ -287,9 +287,9 @@ func TestScanShard_GetRecordsError(t *testing.T) {
 		},
 		getRecordsMock: func(input *kinesis.GetRecordsInput) (*kinesis.GetRecordsOutput, error) {
 			return &kinesis.GetRecordsOutput{
-					NextShardIterator: nil,
-					Records:           nil,
-				}, &types.InvalidArgumentException{}
+				NextShardIterator: nil,
+				Records:           nil,
+			}, &types.InvalidArgumentException{}
 		},
 	}
 

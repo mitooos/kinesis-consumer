@@ -29,7 +29,7 @@ func main() {
 
 	// client
 	cfg, err := config.LoadDefaultConfig(context.TODO(),
-  	config.WithRegion("us-west-2"),
+		config.WithRegion("us-west-2"),
 	)
 	if err != nil {
 		// handle error
@@ -41,7 +41,6 @@ func main() {
 	logger := &myLogger{
 		logger: log.New(os.Stdout, "consumer-example: ", log.LstdFlags),
 	}
-
 
 	// consumer
 	c, err := consumer.New(

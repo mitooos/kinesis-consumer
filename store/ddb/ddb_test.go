@@ -1,10 +1,10 @@
 package ddb
 
 import (
-	"testing"
-	"time"
 	"context"
 	"log"
+	"testing"
+	"time"
 
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"

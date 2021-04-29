@@ -58,7 +58,7 @@ func New(streamName string, opts ...Option) (*Consumer, error) {
 		if err != nil {
 			return nil, err
 		}
-		
+
 		c.client = kinesis.NewFromConfig(cfg)
 	}
 
@@ -259,7 +259,7 @@ func (c *Consumer) getShardIterator(ctx context.Context, streamName, shardID, se
 	}
 
 	if seqNum != "" {
-		params.ShardIteratorType =  types.ShardIteratorTypeAfterSequenceNumber
+		params.ShardIteratorType = types.ShardIteratorTypeAfterSequenceNumber
 		params.StartingSequenceNumber = aws.String(seqNum)
 	} else if c.initialTimestamp != nil {
 		params.ShardIteratorType = types.ShardIteratorTypeAtTimestamp

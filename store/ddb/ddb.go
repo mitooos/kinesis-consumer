@@ -1,17 +1,17 @@
 package ddb
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"sync"
 	"time"
-	"context"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
-	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 
 	"github.com/mitooos/kinesis-consumer/store/ddb/dynamodbiface"
 )

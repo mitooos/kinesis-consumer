@@ -2,10 +2,10 @@ package mysql
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"testing"
 	"time"
-	"errors"
 
 	sqlmock "github.com/DATA-DOG/go-sqlmock"
 )

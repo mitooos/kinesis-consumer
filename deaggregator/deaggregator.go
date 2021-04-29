@@ -1,4 +1,3 @@
-
 // Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: Apache-2.0
 package deaggregator
@@ -82,14 +81,14 @@ func DeaggregateRecords(records []types.Record) ([]types.Record, error) {
 // createUserRecord takes in the partitionKeys of the aggregated record, the individual
 // deaggregated record, and the original aggregated record builds a kinesis.types.Record and
 // returns it
-func createUserRecord(partitionKeys []string, aggRec *rec.Record, record types.Record) (types.Record) {
+func createUserRecord(partitionKeys []string, aggRec *rec.Record, record types.Record) types.Record {
 	partitionKey := partitionKeys[*aggRec.PartitionKeyIndex]
 
 	return types.Record{
 		ApproximateArrivalTimestamp: record.ApproximateArrivalTimestamp,
-		Data: aggRec.Data,
-		EncryptionType: record.EncryptionType,
-		PartitionKey: &partitionKey,
-		SequenceNumber: record.SequenceNumber,
+		Data:                        aggRec.Data,
+		EncryptionType:              record.EncryptionType,
+		PartitionKey:                &partitionKey,
+		SequenceNumber:              record.SequenceNumber,
 	}
 }

@@ -7,7 +7,7 @@ import (
 )
 
 func TestDefaultRetyer(t *testing.T) {
-	retryableError :=  &types.ProvisionedThroughputExceededException{}
+	retryableError := &types.ProvisionedThroughputExceededException{}
 	// retryer is not nil and should returns according to what error is passed in.
 	q := &DefaultRetryer{}
 	if q.ShouldRetry(retryableError) != true {
