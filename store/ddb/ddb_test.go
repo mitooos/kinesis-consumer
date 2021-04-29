@@ -3,9 +3,10 @@ package ddb
 import (
 	"testing"
 	"time"
+	"context"
+	"log"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/aws/session"
+	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 )
 
@@ -42,11 +43,15 @@ func TestCheckpointSetting(t *testing.T) {
 	setRetryer(ckPtr)
 
 	// Test WithDyanmoDBClient
-	var fakeDbClient = dynamodb.New(
-		session.New(aws.NewConfig()), &aws.Config{
-			Region: aws.String("us-west-2"),
-		},
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion("us-west-2"),
 	)
+	if err != nil {
+		// handle error
+		log.Fatal(err)
+	}
+	var fakeDbClient = dynamodb.NewFromConfig(cfg)
+
 	setDDBClient := WithDynamoClient(fakeDbClient)
 	setDDBClient(ckPtr)
 
@@ -70,11 +75,14 @@ func TestNewCheckpointWithOptions(t *testing.T) {
 	setRetryer := WithRetryer(&r)
 
 	// Test WithDyanmoDBClient
-	var fakeDbClient = dynamodb.New(
-		session.New(aws.NewConfig()), &aws.Config{
-			Region: aws.String("us-west-2"),
-		},
+	cfg, err := config.LoadDefaultConfig(context.TODO(),
+		config.WithRegion("us-west-2"),
 	)
+	if err != nil {
+		// handle error
+		log.Fatal(err)
+	}
+	var fakeDbClient = dynamodb.NewFromConfig(cfg)
 	setDDBClient := WithDynamoClient(fakeDbClient)
 
 	ckPtr, err := New("testapp", "testtable", setInterval, setRetryer, setDDBClient)
